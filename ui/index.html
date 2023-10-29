@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Custom App Template</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="colors.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet" />
+</head>
+
+<style>
+    .button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    /* make icon bigger */
+    .button ion-icon {
+        font-size: 20px;
+    }
+    
+    .volume-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .volume-controls .slider {
+        -webkit-appearance: none;
+        width: 70%;
+        padding: 0;
+        height: 5px;
+        border-radius: 5px;
+        background: #d3d3d3;
+        outline: none;
+        -webkit-transition: .2s;
+        transition: opacity .2s;
+    }
+
+    .volume-controls .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background: #26b4df;
+        cursor: pointer;
+    }
+
+</style>
+
+<body>
+    <div id="phone-wrapper">
+        <div class="app" id="content">
+            <div class="app-wrapper">
+                <div class="header">
+                    <div class="title">YouTube Music</div>
+                    <div class="subtitle">Your favorite music on the go!</div>
+                </div>
+                <div class="button-wrapper">
+                    <input id="youtubeUrl" type="text" placeholder="YouTube URL" />
+                    <button id="playButton" class="button"><ion-icon name="play-outline"></ion-icon>Play</button>
+                    <div class="music-controls">
+                        <div class="volume-controls">
+                            <input type="range" min="0" max="100" value="50" class="slider" id="volumeSlider" step="5">
+                            <div class="volume-info">50%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="dev.js"></script>
+    <script>
+        
+        const resName = location.host
+        const playButton = $('#playButton');
+        const volumeSlider = $('#volumeSlider');
+        const volumeInfo = $('.volume-info');
+
+        let isPlaying = false;
+
+        volumeSlider.on('input', function () {
+            volumeInfo.text(`${volumeSlider.val()}%`);
+
+            fetchNui('changeVolume', { volume: volumeSlider.val() });
+        });
+
+        playButton.click(() => {
+            let youtubeUrl = $('#youtubeUrl').val();
+            youtubeUrl = youtubeUrl.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            if (isPlaying) {
+                playButton.html('<ion-icon name="play-outline"></ion-icon>Play');
+                isPlaying = false;
+                fetchNui('stopSound');
+            } else {
+                if (youtubeUrl.length === 0 || youtubeUrl === '') { return sendNotification({ title: "Please enter a YouTube URL!" }) }
+
+                const regex = /^(https?\:\/\/)?(www\.)?(youtu\.be\/|youtube\.com\/(watch\?v=))([a-zA-Z0-9\-_]+)$/;
+                if (!regex.test(youtubeUrl)) { return sendNotification({ title: "Please enter a valid YouTube URL!" }) }
+                
+                playButton.html('<ion-icon name="stop-outline"></ion-icon>Stop');
+                isPlaying = true;
+                fetchNui('playSound', { url: youtubeUrl });
+                $('#youtubeUrl').val('');
+            }
+        });
+    </script>
+
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</body>
+
+</html>
