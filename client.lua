@@ -89,7 +89,6 @@ RegisterNetEvent("phone:youtube_music:soundStatus", function(type, musicId, data
             -- convert volume 0 - 100 to 0.0 - 1.0
             data.volume = data.volume / 100
             xSound:setVolumeMax(musicId, data.volume)
-            print("Volume changed to " .. data.volume)
         end
         elseif type == "stop" then
         if xSound:soundExists(musicId) then
