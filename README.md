@@ -1,4 +1,4 @@
-## Dependencys
+## Dependencies
 - lb-phone
 - xSound
 
