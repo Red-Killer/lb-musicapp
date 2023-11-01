@@ -33,9 +33,11 @@ CreateThread(function ()
     end)
 end)
 
---callback for /playSound
 xSound = exports.xsound
 local playing = false
+local volume = 50.0
+local youtubeUrl = nil
+
 local musicId = "phone_youtubemusic_id_" .. GetPlayerServerId(PlayerId())
 
 RegisterNUICallback("playSound", function(data, cb)
@@ -45,10 +47,21 @@ RegisterNUICallback("playSound", function(data, cb)
 
     TriggerServerEvent("phone:youtube_music:soundStatus", "play", { position = plrCoords, link = url })
     playing = true
+    youtubeUrl = url
+end)
+
+RegisterNUICallback("getData", function(data, cb)
+    local data = {
+        isPlay = playing,
+        volume = volume,
+        youtubeUrl = youtubeUrl
+    }
+    cb(data)
 end)
 
 RegisterNUICallback("changeVolume", function(data, cb)
     TriggerServerEvent("phone:youtube_music:soundStatus", "volume", { volume = data.volume })
+    volume = data.volume
 end)
 
 RegisterNUICallback("stopSound", function(data, cb)
@@ -86,7 +99,6 @@ RegisterNetEvent("phone:youtube_music:soundStatus", function(type, musicId, data
         xSound:Distance(musicId, 20)
     elseif type == "volume" then
         if xSound:soundExists(musicId) then
-            -- convert volume 0 - 100 to 0.0 - 1.0
             data.volume = data.volume / 100
             xSound:setVolumeMax(musicId, data.volume)
         end

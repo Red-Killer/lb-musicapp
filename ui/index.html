@@ -29,7 +29,7 @@
     .button ion-icon {
         font-size: 20px;
     }
-    
+
     .volume-controls {
         display: flex;
         align-items: center;
@@ -59,7 +59,6 @@
         background: #26b4df;
         cursor: pointer;
     }
-
 </style>
 
 <body>
@@ -86,7 +85,7 @@
 
     <script src="dev.js"></script>
     <script>
-        
+
         const resName = location.host
         const playButton = $('#playButton');
         const volumeSlider = $('#volumeSlider');
@@ -94,16 +93,40 @@
 
         let isPlaying = false;
 
+        window.addEventListener("message", (e) => {
+            if (e.data == "componentsLoaded") {
+                fetchNui('getData').then((data) => {
+                    const { youtubeUrl, isPlay, volume } = data;
+                    console.log(JSON.stringify(data));
+                    $('#youtubeUrl').val(youtubeUrl);
+                    if (isPlay) {
+                        playButton.html('<ion-icon name="stop-outline"></ion-icon>Stop');
+                    } else {
+                        playButton.html('<ion-icon name="play-outline"></ion-icon>Play');
+                    }
+                    isPlaying = isPlay;
+                    volumeSlider.val(volume);
+                    volumeInfo.text(`${volume}%`);
+                });
+            }
+        });
+
+
+        // if mouse let the slider update the volume
         volumeSlider.on('input', function () {
             volumeInfo.text(`${volumeSlider.val()}%`);
+        });
 
+        volumeSlider.on('change', function () {
+            volumeInfo.text(`${volumeSlider.val()}%`);
             fetchNui('changeVolume', { volume: volumeSlider.val() });
         });
+
 
         playButton.click(() => {
             let youtubeUrl = $('#youtubeUrl').val();
             youtubeUrl = youtubeUrl.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
+            console.log(isPlaying);
             if (isPlaying) {
                 playButton.html('<ion-icon name="play-outline"></ion-icon>Play');
                 isPlaying = false;
@@ -111,13 +134,11 @@
             } else {
                 if (youtubeUrl.length === 0 || youtubeUrl === '') { return sendNotification({ title: "Please enter a YouTube URL!" }) }
 
-                const regex = /^(https?\:\/\/)?(www\.)?(youtu\.be\/|youtube\.com\/(watch\?v=))([a-zA-Z0-9\-_]+)$/;
-                if (!regex.test(youtubeUrl)) { return sendNotification({ title: "Please enter a valid YouTube URL!" }) }
-                
+                if (!youtubeUrl.match(/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/)) { return sendNotification({ title: "Please enter a valid YouTube URL!" }) }
+
                 playButton.html('<ion-icon name="stop-outline"></ion-icon>Stop');
                 isPlaying = true;
                 fetchNui('playSound', { url: youtubeUrl });
-                $('#youtubeUrl').val('');
             }
         });
     </script>
