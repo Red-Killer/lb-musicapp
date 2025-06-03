@@ -1,4 +1,4 @@
-local identifier = "youtube_music2"
+local identifier = "utune_music2"
 
 CreateThread(function ()
     while GetResourceState("lb-phone") ~= "started" do
@@ -36,36 +36,36 @@ end)
 xSound = exports.xsound
 local playing = false
 local volume = 50.0
-local youtubeUrl = nil
+local utuneUrl = nil
 
-local musicId = "phone_youtubemusic_id_" .. GetPlayerServerId(PlayerId())
+local musicId = "phone_utunemusic_id_" .. GetPlayerServerId(PlayerId())
 
 RegisterNUICallback("playSound", function(data, cb)
     local plrPed = PlayerPedId()
     local plrCoords = GetEntityCoords(plrPed)
     local url = data.url
 
-    TriggerServerEvent("phone:youtube_music:soundStatus", "play", { position = plrCoords, link = url })
+    TriggerServerEvent("phone:utune_music:soundStatus", "play", { position = plrCoords, link = url })
     playing = true
-    youtubeUrl = url
+    utuneUrl = url
 end)
 
 RegisterNUICallback("getData", function(data, cb)
     local data = {
         isPlay = playing,
         volume = volume,
-        youtubeUrl = youtubeUrl
+        utuneUrl = utuneUrl
     }
     cb(data)
 end)
 
 RegisterNUICallback("changeVolume", function(data, cb)
-    TriggerServerEvent("phone:youtube_music:soundStatus", "volume", { volume = data.volume })
+    TriggerServerEvent("phone:utune_music:soundStatus", "volume", { volume = data.volume })
     volume = data.volume
 end)
 
 RegisterNUICallback("stopSound", function(data, cb)
-    TriggerServerEvent("phone:youtube_music:soundStatus", "stop", { })
+    TriggerServerEvent("phone:utune_music:soundStatus", "stop", { })
     playing = false
 end)
 
@@ -77,7 +77,7 @@ CreateThread(function()
         if xSound:soundExists(musicId) and playing then
             if xSound:isPlaying(musicId) then
                 pos = GetEntityCoords(PlayerPedId())
-                TriggerServerEvent("phone:youtube_music:soundStatus", "position", { position = pos })
+                TriggerServerEvent("phone:utune_music:soundStatus", "position", { position = pos })
             else
                 Wait(1000)
             end
@@ -87,7 +87,7 @@ CreateThread(function()
     end
 end)
 
-RegisterNetEvent("phone:youtube_music:soundStatus", function(type, musicId, data)
+RegisterNetEvent("phone:utune_music:soundStatus", function(type, musicId, data)
     if type == "position" then
         if xSound:soundExists(musicId) then
             xSound:Position(musicId, data.position)
