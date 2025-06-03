@@ -8,9 +8,9 @@ CreateThread(function ()
     local function AddApp()
         local added, errorMessage = exports["lb-phone"]:AddCustomApp({
             identifier = identifier,
-            name = "YouTube Music",
+            name = "uTune Music",
             description = "Play your favorite music",
-            developer = "YouTube",
+            developer = "RK Development",
             defaultApp = false, -- OPTIONAL if set to true, app should be added without having to download it,
             size = 59812, -- OPTIONAL in kb
             --price = 999999, -- OPTIONAL, Make players pay with in-game money to download the app
