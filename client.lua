@@ -69,20 +69,20 @@ RegisterNUICallback("stopSound", function(data, cb)
     playing = false
 end)
 
-Citizen.CreateThread(function()
-    Citizen.Wait(1000)
+CreateThread(function()
+    Wait(1000)
     local pos
     while true do
-        Citizen.Wait(100)
+        Wait(100)
         if xSound:soundExists(musicId) and playing then
             if xSound:isPlaying(musicId) then
                 pos = GetEntityCoords(PlayerPedId())
                 TriggerServerEvent("phone:youtube_music:soundStatus", "position", { position = pos })
             else
-                Citizen.Wait(1000)
+                Wait(1000)
             end
         else
-            Citizen.Wait(1000)
+            Wait(1000)
         end
     end
 end)
