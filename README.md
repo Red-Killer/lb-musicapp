@@ -9,11 +9,11 @@ A simple music app for the iPhone for playing your favourite properly licensed, 
 
 ## Features
 - Play your favourite music!
-- Downloadable App in the lb app store
+- Downloadable App in the lb-phone App Store
 - Update frequency of music increases and decreases based on the speed of the vehicle
 - View the thumbnail and title of the song being played
 - Destroys audio on player exit/logout
-- PLaylists (WIP)
+- Playlists (WIP)
 
 
 ## Playlist
@@ -21,5 +21,5 @@ A simple music app for the iPhone for playing your favourite properly licensed, 
 WIP
 
 ## Dependencies
-- lb-phone
-- xSound
+- [lb-phone](https://lbscripts.com/phone)
+- [xSound](https://github.com/Xogy/xsound/)
