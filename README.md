@@ -4,7 +4,7 @@
 
 A simple music app for the iPhone for playing your favourite properly licensed, royalty-free music.
 
-#This is a WIP when this is removed it's ready for use
+# This is a WIP when this is removed it's ready for use
 
 
 ## Features
