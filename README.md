@@ -8,7 +8,8 @@ A simple music app for the iPhone for playing your favourite properly licensed, 
 
 
 ## Features
-- Play your favorute music!
+- Play your favourite music!
+- Downloadable App in the lb app store
 - Update frequency of music increases and decreases based on the speed of the vehicle
 - View the thumbnail and title of the song being played
 - Destroys audio on player exit/logout
