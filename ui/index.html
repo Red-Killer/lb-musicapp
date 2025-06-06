@@ -59,23 +59,67 @@
         background: #26b4df;
         cursor: pointer;
     }
+
+    #video-thumbnail {
+        width: 300px;
+        height: 170px;
+        border-radius: 5px;
+        display: none;
+        margin: 10px auto 0 auto;
+        object-fit: cover;
+        box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+    }
+
+    #thumbnail-placeholder {
+        width: 300px;
+        height: 170px;
+        border-radius: 5px;
+        background: #222;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 10px auto 0 auto;
+        font-size: 12px;
+        text-align: center;
+        text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+        user-select: none;
+    }
+
+    #video-title {
+        margin-top: 5px;
+        font-weight: 600;
+        color: #333;
+        text-align: center;
+        max-width: 300px;
+        margin-left: auto;
+        margin-right: auto;
+        font-size: 14px;
+        word-break: break-word;
+    }
 </style>
 
 <body>
     <div id="phone-wrapper">
         <div class="app" id="content">
             <div class="app-wrapper">
-                <div class="header">
+                <div class="header" style="text-align: center;">
                     <div class="title">uTune Music</div>
-                    <div class="subtitle">Your favorite music on the go!</div>
+                    <div id="thumbnail-placeholder">Nothing is currently playing</div>
+                    <img id="video-thumbnail" src="" alt="Video Thumbnail" />
+                    <div id="video-title"></div>
                 </div>
                 <div class="button-wrapper">
                     <input id="youtubeUrl" type="text" placeholder="Music URL" />
-                    <button id="playButton" class="button"><ion-icon name="play-outline"></ion-icon>Play</button>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <button id="pauseButton" class="button" style="display: none;"><ion-icon
+                                name="pause-outline"></ion-icon>Pause</button>
+                        <button id="playButton" class="button"><ion-icon name="play-outline"></ion-icon>Play</button>
+                    </div>
                     <div class="music-controls">
                         <div class="volume-controls">
                             <input type="range" min="0" max="100" value="50" class="slider" id="volumeSlider" step="5">
-                            <div class="volume-info">50%</div>
+                            <div class="volume-info">Volume: 50%</div>
                         </div>
                     </div>
                 </div>
@@ -85,62 +129,141 @@
 
     <script src="dev.js"></script>
     <script>
-
-        const resName = location.host
+        const resName = location.host;
         const playButton = $('#playButton');
+        const pauseButton = $('#pauseButton');
         const volumeSlider = $('#volumeSlider');
         const volumeInfo = $('.volume-info');
 
+        const videoThumbnail = $('#video-thumbnail');
+        const videoTitle = $('#video-title');
+        const thumbnailPlaceholder = $('#thumbnail-placeholder');
+
         let isPlaying = false;
+        let isPaused = false;
+
+        function updateVideoInfo(youtubeUrl) {
+            if (!youtubeUrl) {
+                videoThumbnail.hide();
+                thumbnailPlaceholder.show();
+                videoTitle.text('');
+                return;
+            }
+
+            // Extract video ID from URL
+            const videoIdMatch = youtubeUrl.match(/(?:youtu\.be\/|youtube\.com.*v=)([^&]+)/);
+            if (!videoIdMatch) {
+                videoThumbnail.hide();
+                thumbnailPlaceholder.show();
+                videoTitle.text('');
+                return;
+            }
+            const videoId = videoIdMatch[1];
+
+            // Thumbnail URL pattern
+            const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+            videoThumbnail.attr('src', thumbnailUrl).show();
+            thumbnailPlaceholder.hide();
+
+            // Fetch video title from YouTube oEmbed API (no API key required)
+            $.getJSON(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`, (data) => {
+                videoTitle.text(data.title);
+            }).fail(() => {
+                videoTitle.text('Unknown Title');
+            });
+        }
 
         window.addEventListener("message", (e) => {
             if (e.data == "componentsLoaded") {
                 fetchNui('getData').then((data) => {
                     const { youtubeUrl, isPlay, volume } = data;
-                    console.log(JSON.stringify(data));
                     $('#youtubeUrl').val(youtubeUrl);
-                    if (isPlay) {
+                    isPlaying = isPlay;
+                    isPaused = false;
+
+                    volumeSlider.val(volume);
+                    volumeInfo.text(`Volume: ${volume}%`);
+
+                    updateVideoInfo(youtubeUrl);
+
+                    if (isPlaying) {
                         playButton.html('<ion-icon name="stop-outline"></ion-icon>Stop');
+                        pauseButton.show();
                     } else {
                         playButton.html('<ion-icon name="play-outline"></ion-icon>Play');
+                        pauseButton.hide();
                     }
-                    isPlaying = isPlay;
-                    volumeSlider.val(volume);
-                    volumeInfo.text(`${volume}%`);
                 });
             }
         });
 
-
-        // if mouse let the slider update the volume
         volumeSlider.on('input', function () {
-            volumeInfo.text(`${volumeSlider.val()}%`);
+            volumeInfo.text(`Volume: ${volumeSlider.val()}%`);
         });
 
         volumeSlider.on('change', function () {
-            volumeInfo.text(`${volumeSlider.val()}%`);
+            volumeInfo.text(`Volume: ${volumeSlider.val()}%`);
             fetchNui('changeVolume', { volume: volumeSlider.val() });
         });
 
-
         playButton.click(() => {
-            let youtubeUrl = $('#youtubeUrl').val();
-            youtubeUrl = youtubeUrl.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            console.log(isPlaying);
+            const youtubeUrl = $('#youtubeUrl').val().trim().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
             if (isPlaying) {
-                playButton.html('<ion-icon name="play-outline"></ion-icon>Play');
                 isPlaying = false;
+                isPaused = false;
+                playButton.html('<ion-icon name="play-outline"></ion-icon>Play');
+                pauseButton.hide();
+                videoThumbnail.hide();
+                thumbnailPlaceholder.show();
+                videoTitle.text('');
                 fetchNui('stopSound');
+                return;
+            }
+
+            if (!youtubeUrl || !youtubeUrl.match(/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/)) {
+                return sendNotification({ title: "Please enter a valid YouTube URL!" });
+            }
+
+            isPlaying = true;
+            isPaused = false;
+            playButton.html('<ion-icon name="stop-outline"></ion-icon>Stop');
+            pauseButton.html('<ion-icon name="pause-outline"></ion-icon>Pause');
+            pauseButton.show();
+
+            updateVideoInfo(youtubeUrl);
+
+            fetchNui('playSound', { url: youtubeUrl });
+        });
+
+        pauseButton.click(() => {
+            if (!isPlaying) return;
+
+            isPaused = !isPaused;
+            if (isPaused) {
+                pauseButton.html('<ion-icon name="play-outline"></ion-icon>Resume');
+                fetchNui('pauseSound');
             } else {
-                if (youtubeUrl.length === 0 || youtubeUrl === '') { return sendNotification({ title: "Please enter a YouTube URL!" }) }
-
-                if (!youtubeUrl.match(/^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/)) { return sendNotification({ title: "Please enter a valid YouTube URL!" }) }
-
-                playButton.html('<ion-icon name="stop-outline"></ion-icon>Stop');
-                isPlaying = true;
-                fetchNui('playSound', { url: youtubeUrl });
+                pauseButton.html('<ion-icon name="pause-outline"></ion-icon>Pause');
+                fetchNui('resumeSound');
             }
         });
+
+        // Notification helper
+        function sendNotification(data) {
+            fetchNui('notify', data);
+        }
+
+        // NUI helper
+        function fetchNui(event, data = {}) {
+            return fetch(`https://${resName}/${event}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json; charset=UTF-8",
+                },
+                body: JSON.stringify(data),
+            }).then(res => res.json());
+        }
     </script>
 
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
