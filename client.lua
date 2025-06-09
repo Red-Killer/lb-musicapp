@@ -1,6 +1,6 @@
-local identifier = "youtube_music2"
+local identifier = "utune_music2"
 
-CreateThread(function ()
+CreateThread(function()
     while GetResourceState("lb-phone") ~= "started" do
         Wait(500)
     end
@@ -8,14 +8,13 @@ CreateThread(function ()
     local function AddApp()
         local added, errorMessage = exports["lb-phone"]:AddCustomApp({
             identifier = identifier,
-            name = "YouTube Music",
+            name = "uTune Music",
             description = "Play your favorite music",
-            developer = "YouTube",
-            defaultApp = false, -- OPTIONAL if set to true, app should be added without having to download it,
-            size = 59812, -- OPTIONAL in kb
-            --price = 999999, -- OPTIONAL, Make players pay with in-game money to download the app
-            images = {}, -- OPTIONAL array of images for the app on the app store
-            ui = GetCurrentResourceName() .. "/ui/index.html", -- this is the path to the HTML file, can also be a URL
+            developer = "RK Development",
+            defaultApp = false,
+            size = 59812,
+            images = {},
+            ui = GetCurrentResourceName() .. "/ui/index.html",
             icon = "https://cfx-nui-" .. GetCurrentResourceName() .. "/ui/assets/icon.png"
         })
 
@@ -33,78 +32,175 @@ CreateThread(function ()
     end)
 end)
 
-xSound = exports.xsound
+local xSound = exports.xsound
 local playing = false
 local volume = 50.0
-local youtubeUrl = nil
+local utuneUrl = nil
+local myMusicId = "phone_utuneemusic_id_" .. GetPlayerServerId(PlayerId())
 
-local musicId = "phone_youtubemusic_id_" .. GetPlayerServerId(PlayerId())
-
+-- 📦 Play music
 RegisterNUICallback("playSound", function(data, cb)
-    local plrPed = PlayerPedId()
-    local plrCoords = GetEntityCoords(plrPed)
-    local url = data.url
-
-    TriggerServerEvent("phone:youtube_music:soundStatus", "play", { position = plrCoords, link = url })
+    local coords = GetEntityCoords(PlayerPedId())
+    utuneUrl = data.url
     playing = true
-    youtubeUrl = url
+
+    -- Initial play trigger
+    TriggerServerEvent("phone:utune_music:soundStatus", "play", {
+        position = coords,
+        link = utuneUrl
+    })
+
+    -- 🔁 Force position updates to help sync sound position for nearby clients
+    CreateThread(function()
+        Wait(500)
+        local pos = GetEntityCoords(PlayerPedId())
+        TriggerServerEvent("phone:utune_music:soundStatus", "position", {
+            position = pos
+        })
+
+        Wait(1000)
+        local pos2 = GetEntityCoords(PlayerPedId())
+        TriggerServerEvent("phone:utune_music:soundStatus", "position", {
+            position = pos2
+        })
+    end)
 end)
 
-RegisterNUICallback("getData", function(data, cb)
-    local data = {
+-- 📦 Stop music
+RegisterNUICallback("stopSound", function(_, cb)
+    playing = false
+    TriggerServerEvent("phone:utune_music:soundStatus", "stop", {})
+end)
+
+-- 🔊 Change volume
+RegisterNUICallback("changeVolume", function(data, cb)
+    volume = data.volume
+    TriggerServerEvent("phone:utune_music:soundStatus", "volume", {
+        volume = volume
+    })
+end)
+
+-- 📦 Send current state to UI
+RegisterNUICallback("getData", function(_, cb)
+    cb({
         isPlay = playing,
         volume = volume,
-        youtubeUrl = youtubeUrl
-    }
-    cb(data)
+        utuneUrl = utuneUrl
+    })
 end)
 
-RegisterNUICallback("changeVolume", function(data, cb)
-    TriggerServerEvent("phone:youtube_music:soundStatus", "volume", { volume = data.volume })
-    volume = data.volume
-end)
+-- 🔄 Only the source player updates position
+local function getSpeed(ped)
+    local vel = GetEntityVelocity(ped)
+    return #(vector3(vel.x, vel.y, vel.z)) * 2.23694 -- m/s to mph
+end
 
-RegisterNUICallback("stopSound", function(data, cb)
-    TriggerServerEvent("phone:youtube_music:soundStatus", "stop", { })
-    playing = false
-end)
+local lastTier = 0
+local tierExpireTime = 0
 
-Citizen.CreateThread(function()
-    Citizen.Wait(1000)
-    local pos
+-- Tiers: { [tierLevel] = { speedThreshold, waitTime } }
+local tiers = {
+    { speed = 125, wait = 10, level = 4 },
+    { speed = 100, wait = 25, level = 3 },
+    { speed = 80,  wait = 50, level = 2 },
+    { speed = 30,  wait = 75, level = 1 },
+    { speed = 0,   wait = 500, level = 0 },
+}
+
+CreateThread(function()
+    Wait(1000)
     while true do
-        Citizen.Wait(100)
-        if xSound:soundExists(musicId) and playing then
-            if xSound:isPlaying(musicId) then
-                pos = GetEntityCoords(PlayerPedId())
-                TriggerServerEvent("phone:youtube_music:soundStatus", "position", { position = pos })
-            else
-                Citizen.Wait(1000)
+        if playing then
+            local ped = PlayerPedId()
+            local coords = GetEntityCoords(ped)
+            local speed = getSpeed(ped)
+            local currentTime = GetGameTimer()
+            local selectedWait = 1000
+            local selectedTier = 0
+
+            -- Determine the highest tier currently valid
+            for _, tier in ipairs(tiers) do
+                if speed >= tier.speed then
+                    selectedWait = tier.wait
+                    selectedTier = tier.level
+                    break
+                end
             end
+
+            -- If we enter a higher tier, update and set the "stickiness" timer
+            if selectedTier > lastTier then
+                lastTier = selectedTier
+                tierExpireTime = currentTime + 3000 -- 3 seconds of stickiness
+            elseif currentTime < tierExpireTime then
+                -- Maintain higher tier wait time even if speed drops
+                for _, tier in ipairs(tiers) do
+                    if tier.level == lastTier then
+                        selectedWait = tier.wait
+                        break
+                    end
+                end
+            else
+                lastTier = selectedTier
+            end
+
+            -- Send position update
+            TriggerServerEvent("phone:utune_music:soundStatus", "position", {
+                position = coords
+            })
+
+            Wait(selectedWait)
         else
-            Citizen.Wait(1000)
+            Wait(1000)
         end
     end
 end)
 
-RegisterNetEvent("phone:youtube_music:soundStatus", function(type, musicId, data)
-    if type == "position" then
-        if xSound:soundExists(musicId) then
-            xSound:Position(musicId, data.position)
-        end
-    elseif type == "play" then
-        xSound:PlayUrlPos(musicId, data.link, 1, data.position)
-        xSound:destroyOnFinish(musicId, true)
+
+-- 🎧 Receive music updates from server
+RegisterNetEvent("phone:utune_music:soundStatus", function(type, musicId, data)
+    if type == "play" then
+        xSound:PlayUrlPos(musicId, data.link, 1.0, data.position)
         xSound:setSoundDynamic(musicId, true)
-        xSound:Distance(musicId, 20)
-    elseif type == "volume" then
-        if xSound:soundExists(musicId) then
-            data.volume = data.volume / 100
-            xSound:setVolumeMax(musicId, data.volume)
-        end
-        elseif type == "stop" then
+        xSound:Distance(musicId, 15)
+        xSound:destroyOnFinish(musicId, true)
+
+        local vol = data.volume or volume or 50
+        xSound:setVolumeMax(musicId, vol / 100)
+
+    elseif type == "stop" then
         if xSound:soundExists(musicId) then
             xSound:Destroy(musicId)
         end
+
+    elseif type == "volume" then
+        if xSound:soundExists(musicId) then
+            xSound:setVolumeMax(musicId, data.volume / 100)
+        end
+
+    elseif type == "position" then
+        if xSound:soundExists(musicId) then
+            xSound:Position(musicId, data.position)
+        end
+
+    elseif type == "pause" then
+        if xSound:soundExists(musicId) then
+            xSound:Pause(musicId)
+        end
+
+    elseif type == "resume" then
+        if xSound:soundExists(musicId) then
+            xSound:Resume(musicId)
+        end
     end
+end)
+
+
+RegisterNUICallback("pauseSound", function(_, cb)
+    TriggerServerEvent("phone:utune_music:soundStatus", "pause", {})
+    cb({})
+end)
+
+RegisterNUICallback("resumeSound", function(_, cb)
+    TriggerServerEvent("phone:utune_music:soundStatus", "resume", {})
+    cb({})
 end)

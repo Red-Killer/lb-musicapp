@@ -1,9 +1,9 @@
 fx_version "cerulean"
 game "gta5"
 
-author "Red Killer"
-description "Adding youtube music to lb-phone"
-version "1.0.0"
+author "Red Killer & PrinceAlbert (Popcorn RP)"
+description "Play your favourite music through lb-phone"
+version "2.0.0"
 
 client_script "client.lua"
 server_script "server.lua"
