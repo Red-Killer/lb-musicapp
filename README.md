@@ -4,9 +4,6 @@
 
 A simple music app for lb-phone for playing your favourite properly licensed, royalty-free music.
 
-# This is a WIP when this is removed it's ready for use
-
-
 ## Features
 - Play your favourite music!
 - Downloadable App in the lb-phone App Store
