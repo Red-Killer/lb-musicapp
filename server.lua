@@ -30,7 +30,7 @@ RegisterNetEvent("phone:utune_music:soundStatus", function(type, data)
 end)
 
 
--- 🧹 Clean up sound when player disconnects
+-- Clean up sound when player disconnects
 AddEventHandler("playerDropped", function()
     local src = source
     local musicId = "phone_utuneemusic_id_" .. src
