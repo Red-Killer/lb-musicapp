@@ -38,7 +38,7 @@ local volume = 50.0
 local utuneUrl = nil
 local myMusicId = "phone_utuneemusic_id_" .. GetPlayerServerId(PlayerId())
 
--- 📦 Play music
+-- Play music
 RegisterNUICallback("playSound", function(data, cb)
     local coords = GetEntityCoords(PlayerPedId())
     utuneUrl = data.url
@@ -50,7 +50,7 @@ RegisterNUICallback("playSound", function(data, cb)
         link = utuneUrl
     })
 
-    -- 🔁 Force position updates to help sync sound position for nearby clients
+    --  Force position updates to help sync sound position for nearby clients
     CreateThread(function()
         Wait(500)
         local pos = GetEntityCoords(PlayerPedId())
@@ -66,7 +66,7 @@ RegisterNUICallback("playSound", function(data, cb)
     end)
 end)
 
--- 📦 Stop music
+-- Stop music
 RegisterNUICallback("stopSound", function(_, cb)
     playing = false
     TriggerServerEvent("phone:utune_music:soundStatus", "stop", {})
@@ -80,7 +80,7 @@ RegisterNUICallback("changeVolume", function(data, cb)
     })
 end)
 
--- 📦 Send current state to UI
+-- Send current state to UI
 RegisterNUICallback("getData", function(_, cb)
     cb({
         isPlay = playing,
@@ -89,7 +89,7 @@ RegisterNUICallback("getData", function(_, cb)
     })
 end)
 
--- 🔄 Only the source player updates position
+-- Only the source player updates position
 local function getSpeed(ped)
     local vel = GetEntityVelocity(ped)
     return #(vector3(vel.x, vel.y, vel.z)) * 2.23694 -- m/s to mph
@@ -156,7 +156,7 @@ CreateThread(function()
 end)
 
 
--- 🎧 Receive music updates from server
+-- Receive music updates from server
 RegisterNetEvent("phone:utune_music:soundStatus", function(type, musicId, data)
     if type == "play" then
         xSound:PlayUrlPos(musicId, data.link, 1.0, data.position)
