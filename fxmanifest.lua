@@ -3,7 +3,7 @@ game "gta5"
 
 author "Red Killer & PrinceAlbert (Popcorn RP)"
 description "Play your favourite music through lb-phone"
-version "2.0.0"
+version "2.1.0"
 
 shared_script "config.lua"
 client_script "client.lua"
