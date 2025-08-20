@@ -10,12 +10,14 @@ A simple music app for lb-phone for playing your favourite properly licensed, ro
 - Update frequency of music increases and decreases based on the speed of the vehicle
 - View the thumbnail and title of the song being played
 - Destroys audio on player exit/logout
-- Playlists (WIP)
+- Playlists (using KVP to store song lists across servers/characters)
 
 
-## Playlist
+## User Interface
 
-WIP
+<img width="655" height="651" alt="image" src="https://github.com/user-attachments/assets/12c61652-9052-4dc5-95ac-316fe0b7622d" />
+
+
 
 ## Dependencies
 - [lb-phone](https://lbscripts.com/phone)

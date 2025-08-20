@@ -34,9 +34,10 @@ end)
 
 local xSound = exports.xsound
 local playing = false
-local volume = 50.0
+local volume = Config.DEFAULT_VOLUME
 local utuneUrl = nil
 local myMusicId = "phone_utuneemusic_id_" .. GetPlayerServerId(PlayerId())
+
 
 local playlist = {}
 local currentPlaylistIndex = 0
@@ -59,6 +60,7 @@ end
 -- Load playlist on resource start
 loadPlaylist()
 
+
 -- Play music
 RegisterNUICallback("playSound", function(data, cb)
     local coords = GetEntityCoords(PlayerPedId())
@@ -71,7 +73,9 @@ RegisterNUICallback("playSound", function(data, cb)
         link = utuneUrl
     })
 
-    -- Force position updates to help sync sound position for nearby clients 
+
+    --  Force position updates to help sync sound position for nearby clients
+
     CreateThread(function()
         Wait(500)
         local pos = GetEntityCoords(PlayerPedId())
@@ -214,7 +218,7 @@ RegisterNUICallback("playPrevious", function(_, cb)
     cb({})
 end)
 
--- We get the speed of users to determine how often we should update the music to compensate for "lag"
+
 local function getSpeed(ped)
     local vel = GetEntityVelocity(ped)
     return #(vector3(vel.x, vel.y, vel.z)) * 2.23694 -- m/s to mph
@@ -222,15 +226,8 @@ end
 
 local lastTier = 0
 local tierExpireTime = 0
-
--- Tiers: { [tierLevel] = { speedThreshold, waitTime } }
-local tiers = {
-    { speed = 125, wait = 10, level = 4 },
-    { speed = 100, wait = 25, level = 3 },
-    { speed = 80,  wait = 50, level = 2 },
-    { speed = 30,  wait = 75, level = 1 },
-    { speed = 0,   wait = 500, level = 0 },
-}
+local lastPosition = vector3(0, 0, 0)
+local tiers = Config.UPDATE_TIERS
 
 CreateThread(function()
     Wait(1000)
@@ -255,9 +252,9 @@ CreateThread(function()
             -- If we enter a higher tier, update and set the "stickiness" timer
             if selectedTier > lastTier then
                 lastTier = selectedTier
-                tierExpireTime = currentTime + 3000 -- 3 seconds of stickiness
+                tierExpireTime = currentTime + Config.TIER_STICKY_TIME -- Use config value
             elseif currentTime < tierExpireTime then
-                -- Maintain higher tier wait time even if speed drops
+                -- Maintain higher-tier wait time even if speed drops
                 for _, tier in ipairs(tiers) do
                     if tier.level == lastTier then
                         selectedWait = tier.wait
@@ -267,11 +264,30 @@ CreateThread(function()
             else
                 lastTier = selectedTier
             end
+            -- Calculate distance moved since last update
+            local distanceMoved = #(coords - lastPosition)
+            
+            -- Smart update logic - only send if necessary
+            local shouldUpdate = false
+            
+            if selectedTier >= 3 then
+                -- High speed (100+ mph): always update at interval
+                shouldUpdate = true
+            elseif distanceMoved > Config.MIN_DISTANCE_THRESHOLD then
+                -- Moved significantly (more than 2 meters)
+                shouldUpdate = true
+            elseif selectedWait >= 1000 and distanceMoved > 0.5 then
+                -- Stationary/slow: only update if moved at least 0.5 meters
+                shouldUpdate = true
+            end
 
-            -- Send position update
-            TriggerServerEvent("phone:utune_music:soundStatus", "position", {
-                position = coords
-            })
+            -- Only send update if we should
+            if shouldUpdate then
+                TriggerServerEvent("phone:utune_music:soundStatus", "position", {
+                    position = coords
+                })
+                lastPosition = coords
+            end
 
             Wait(selectedWait)
         else
@@ -281,14 +297,41 @@ CreateThread(function()
 end)
 
 -- Receive music updates from server
+
 RegisterNetEvent("phone:utune_music:soundStatus", function(type, musicId, data)
+    -- Distance check for position updates
+    if type == "position" and data.position then
+        local myPed = PlayerPedId()
+        local myCoords = GetEntityCoords(myPed)
+        local distance = #(myCoords - vector3(data.position.x, data.position.y, data.position.z))
+
+        if distance > Config.MUSIC_RANGE then
+            if xSound:soundExists(musicId) then
+                xSound:Destroy(musicId)
+            end
+            return
+        end
+    end
+
     if type == "play" then
+        if data.position then
+            local myPed = PlayerPedId()
+            local myCoords = GetEntityCoords(myPed)
+            local distance = #(myCoords - vector3(data.position.x, data.position.y, data.position.z))
+            
+            if distance > Config.MUSIC_RANGE then
+                return
+            end
+        end
+
         xSound:PlayUrlPos(musicId, data.link, 1.0, data.position)
         xSound:setSoundDynamic(musicId, true)
-        xSound:Distance(musicId, 15)
+        xSound:Distance(musicId, Config.XSOUND_DISTANCE)
         xSound:destroyOnFinish(musicId, true)
-        
-        local vol = data.volume or volume or 50
+
+
+        local vol = data.volume or volume or Config.DEFAULT_VOLUME
+
         xSound:setVolumeMax(musicId, vol / 100)
 
     elseif type == "stop" then
@@ -361,7 +404,6 @@ CreateThread(function()
         end
     end
 end)
-
 
 RegisterNUICallback("pauseSound", function(_, cb)
     isPaused = true
