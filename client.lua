@@ -70,7 +70,8 @@ RegisterNUICallback("playSound", function(data, cb)
 
     TriggerServerEvent("phone:utune_music:soundStatus", "play", {
         position = coords,
-        link = utuneUrl
+        link = utuneUrl,
+        volume = volume
     })
 
 
@@ -89,7 +90,7 @@ RegisterNUICallback("playSound", function(data, cb)
             position = pos2
         })
     end)
-    
+
     cb({})
 end)
 
@@ -149,7 +150,8 @@ RegisterNUICallback("playFromPlaylist", function(data, cb)
 
         TriggerServerEvent("phone:utune_music:soundStatus", "play", {
             position = coords,
-            link = utuneUrl
+            link = utuneUrl,
+            volume = volume
         })
 
         -- Force position updates
@@ -180,7 +182,7 @@ RegisterNUICallback("playNext", function(_, cb)
         if currentPlaylistIndex > #playlist then
             currentPlaylistIndex = 1
         end
-        
+
         local song = playlist[currentPlaylistIndex]
         if song then
             local coords = GetEntityCoords(PlayerPedId())
@@ -189,7 +191,8 @@ RegisterNUICallback("playNext", function(_, cb)
 
             TriggerServerEvent("phone:utune_music:soundStatus", "play", {
                 position = coords,
-                link = utuneUrl
+                link = utuneUrl,
+                volume = volume
             })
         end
     end
@@ -202,7 +205,7 @@ RegisterNUICallback("playPrevious", function(_, cb)
         if currentPlaylistIndex < 1 then
             currentPlaylistIndex = #playlist
         end
-        
+
         local song = playlist[currentPlaylistIndex]
         if song then
             local coords = GetEntityCoords(PlayerPedId())
@@ -211,7 +214,8 @@ RegisterNUICallback("playPrevious", function(_, cb)
 
             TriggerServerEvent("phone:utune_music:soundStatus", "play", {
                 position = coords,
-                link = utuneUrl
+                link = utuneUrl,
+                volume = volume
             })
         end
     end
@@ -266,10 +270,10 @@ CreateThread(function()
             end
             -- Calculate distance moved since last update
             local distanceMoved = #(coords - lastPosition)
-            
+
             -- Smart update logic - only send if necessary
             local shouldUpdate = false
-            
+
             if selectedTier >= 3 then
                 -- High speed (100+ mph): always update at interval
                 shouldUpdate = true
@@ -367,7 +371,7 @@ CreateThread(function()
         Wait(1000)
         if playing and currentPlaylistIndex > 0 and not isPaused then
             local musicId = "phone_utuneemusic_id_" .. GetPlayerServerId(PlayerId())
-            
+
             -- Check if sound exists and is playing
             if not xSound:soundExists(musicId) then
                 -- Song has ended, check if we should play next
@@ -379,12 +383,13 @@ CreateThread(function()
                         Wait(500) -- Small delay
                         local coords = GetEntityCoords(PlayerPedId())
                         utuneUrl = song.url
-                        
+
                         TriggerServerEvent("phone:utune_music:soundStatus", "play", {
                             position = coords,
-                            link = utuneUrl
+                            link = utuneUrl,
+                            volume = volume
                         })
-                        
+
                         -- Notify UI
                         SendNUIMessage({
                             action = "songChanged",
