@@ -357,28 +357,28 @@ RegisterNetEvent("phone:utune_music:syncPlay", function(musicId, syncData)
    local myPed = PlayerPedId()
    local myCoords = GetEntityCoords(myPed)
    local distance = #(myCoords - vector3(syncData.position.x, syncData.position.y, syncData.position.z))
-   
+
    if distance > Config.MUSIC_RANGE then
        return
    end
-   
+
    if xSound:soundExists(musicId) then
        xSound:Destroy(musicId)
    end
-   
+
    xSound:PlayUrlPos(musicId, syncData.link, 1.0, syncData.position)
    xSound:setSoundDynamic(musicId, true)
    xSound:Distance(musicId, Config.XSOUND_DISTANCE)
    xSound:destroyOnFinish(musicId, true)
-   
+
    local vol = syncData.volume or Config.DEFAULT_VOLUME
    xSound:setVolumeMax(musicId, vol / 100)
-   
+
    CreateThread(function()
        Wait(500)
        if xSound:soundExists(musicId) then
            xSound:setTimeStamp(musicId, syncData.elapsedTime)
-           
+
            if syncData.isPaused then
                xSound:Pause(musicId)
            end
@@ -386,30 +386,54 @@ RegisterNetEvent("phone:utune_music:syncPlay", function(musicId, syncData)
    end)
 end)
 
+local syncAttempts = {}
+
 CreateThread(function()
    while true do
        Wait(5000)
-       
+
        local myPed = PlayerPedId()
        local myCoords = GetEntityCoords(myPed)
-       
+
        local players = GetActivePlayers()
        for _, player in ipairs(players) do
            if player ~= PlayerId() then
                local ped = GetPlayerPed(player)
                local coords = GetEntityCoords(ped)
                local distance = #(myCoords - coords)
-               
+
                if distance <= Config.MUSIC_RANGE then
                    local serverId = GetPlayerServerId(player)
                    local musicId = "phone_utuneemusic_id_" .. serverId
-                   
+
                    if not xSound:soundExists(musicId) then
-                       TriggerServerEvent("phone:utune_music:requestSync", serverId)
+                       syncAttempts[serverId] = syncAttempts[serverId] or 0
+
+                       if syncAttempts[serverId] < 3 then
+                           TriggerServerEvent("phone:utune_music:requestSync", serverId)
+                           syncAttempts[serverId] = syncAttempts[serverId] + 1
+                       end
+                   else
+                       syncAttempts[serverId] = 0
                    end
+               else
+                   syncAttempts[serverId] = nil
                end
            end
        end
+
+        for serverId in pairs(syncAttempts) do
+            local found = false
+            for _, player in ipairs(players) do
+                if GetPlayerServerId(player) == serverId then
+                    found = true
+                    break
+                end
+            end
+            if not found then
+                syncAttempts[serverId] = nil
+            end
+        end
    end
 end)
 

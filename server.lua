@@ -3,19 +3,19 @@ local activeSounds = {}
 local function getPlayersInRange(position, range)
    local players = {}
    local allPlayers = GetPlayers()
-   
+
    for _, playerId in ipairs(allPlayers) do
        local ped = GetPlayerPed(playerId)
        if ped and ped > 0 then
            local playerCoords = GetEntityCoords(ped)
            local distance = #(playerCoords - vector3(position.x, position.y, position.z))
-           
+
            if distance <= range then
                table.insert(players, tonumber(playerId))
            end
        end
    end
-   
+
    return players
 end
 
@@ -109,31 +109,35 @@ RegisterNetEvent("phone:utune_music:soundStatus", function(type, data)
 end)
 
 RegisterNetEvent("phone:utune_music:requestSync", function(targetPlayer)
-   local src = source
-   
-   if activeSounds[targetPlayer] then
-       local soundData = activeSounds[targetPlayer]
-       local musicId = "phone_utuneemusic_id_" .. targetPlayer
-       
-       local currentTime = os.time()
-       local elapsedTime = currentTime - soundData.startTime - soundData.totalPausedTime
-       
-       if soundData.pausedAt then
-           elapsedTime = soundData.pausedAt - soundData.startTime - soundData.totalPausedTime
-       end
-       
-       local syncData = {
-           position = soundData.position,
-           link = soundData.data.link,
-           volume = soundData.data.volume,
-           startTime = soundData.startTime,
-           elapsedTime = elapsedTime,
-           isPaused = soundData.pausedAt ~= nil
-       }
-       
-       TriggerClientEvent("phone:utune_music:syncPlay", src, musicId, syncData)
-   end
-end)
+    local src = source
+
+    if activeSounds[targetPlayer] then
+        local soundData = activeSounds[targetPlayer]
+        local musicId = "phone_utuneemusic_id_" .. targetPlayer
+
+        local currentTime = os.time()
+        local elapsedTime = currentTime - soundData.startTime - soundData.totalPausedTime
+
+        if soundData.pausedAt then
+            elapsedTime = soundData.pausedAt - soundData.startTime - soundData.totalPausedTime
+        end
+
+        local syncData = {
+            position = soundData.position,
+            link = soundData.data.link,
+            volume = soundData.data.volume,
+            startTime = soundData.startTime,
+            elapsedTime = elapsedTime,
+            isPaused = soundData.pausedAt ~= nil
+        }
+
+        TriggerClientEvent("phone:utune_music:syncPlay", src, musicId, syncData)
+    else
+
+        local musicId = "phone_utuneemusic_id_" .. targetPlayer
+        TriggerClientEvent("phone:utune_music:soundStatus", src, "stop", musicId, {})
+    end
+ end)
 
 AddEventHandler("playerDropped", function()
    local src = source
