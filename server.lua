@@ -43,7 +43,7 @@ RegisterNetEvent("phone:utune_music:soundStatus", function(type, data)
        }
 
        data.startTime = os.time()
-       
+
        local nearbyPlayers = getPlayersInRange(data.position, Config.MUSIC_RANGE)
        for _, playerId in ipairs(nearbyPlayers) do
            TriggerClientEvent("phone:utune_music:soundStatus", playerId, "play", musicId, data)
@@ -85,7 +85,7 @@ RegisterNetEvent("phone:utune_music:soundStatus", function(type, data)
    elseif type == "pause" then
        if activeSounds[src] then
            activeSounds[src].pausedAt = os.time()
-           
+
            local nearbyPlayers = getPlayersInRange(activeSounds[src].position, Config.MUSIC_RANGE)
            for _, playerId in ipairs(nearbyPlayers) do
                TriggerClientEvent("phone:utune_music:soundStatus", playerId, "pause", musicId, data)
@@ -99,7 +99,7 @@ RegisterNetEvent("phone:utune_music:soundStatus", function(type, data)
                activeSounds[src].totalPausedTime = activeSounds[src].totalPausedTime + pauseDuration
                activeSounds[src].pausedAt = nil
            end
-           
+
            local nearbyPlayers = getPlayersInRange(activeSounds[src].position, Config.MUSIC_RANGE)
            for _, playerId in ipairs(nearbyPlayers) do
                TriggerClientEvent("phone:utune_music:soundStatus", playerId, "resume", musicId, data)
