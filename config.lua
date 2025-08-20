@@ -10,11 +10,11 @@ Config.XSOUND_DISTANCE = 15 -- Distance setting for xSound
 
 -- Position update tiers (speed in mph, wait in ms)
 Config.UPDATE_TIERS = {
-    { speed = 125, wait = 10,  level = 4 },  -- Very high speed: 20 updates/sec
-    { speed = 100, wait = 25, level = 3 },  -- High speed: 10 updates/sec
-    { speed = 80,  wait = 50, level = 2 },  -- Medium-high speed: 5 updates/sec
-    { speed = 30,  wait = 75, level = 1 },  -- Medium speed: ~3 updates/sec
-    { speed = 0,   wait = 500, level = 0 }, -- Low/stationary: 1 update/sec
+    { speed = 125, wait = 5,   level = 4 },  -- Very high speed: 200 updates/sec
+    { speed = 100, wait = 15,  level = 3 },  -- High speed: ~67 updates/sec
+    { speed = 75,  wait = 25,  level = 2 },  -- Medium-high speed: 40 updates/sec
+    { speed = 25,  wait = 50,  level = 1 },  -- Medium speed: 20 updates/sec
+    { speed = 0,   wait = 300, level = 0 },  -- Low/stationary: ~3 updates/sec
 }
 
 -- Other settings
