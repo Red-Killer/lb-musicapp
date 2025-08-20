@@ -4,7 +4,7 @@ game "gta5"
 author "Red Killer & PrinceAlbert (Popcorn RP)"
 
 description "Play YouTube videos through lb-phone"
-version "2.0.0"
+version "2.0.1"
 
 shared_script "config.lua"
 client_script "client.lua"
